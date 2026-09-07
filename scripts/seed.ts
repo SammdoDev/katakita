@@ -2,6 +2,9 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { parseCurriculumWorkbook } from "../lib/excel";
 import { importCurriculum } from "../lib/import-curriculum";
+import { loadEnvConfig } from "@next/env";
+
+loadEnvConfig(process.cwd());
 
 async function main() {
   const workbookPath = path.join(process.cwd(), "Rencana_Belajar_Inggris_120_Hari.xlsx");
@@ -17,4 +20,3 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
-

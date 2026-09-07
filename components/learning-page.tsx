@@ -237,6 +237,12 @@ export function LearningPage({ lesson }: { lesson: LessonView }) {
           </Button>
         </div>
       </form>
+      <Card className="mt-7 border-teal-300/30 p-6 sm:p-7">
+        <p className="eyebrow">Setelah belajar</p>
+        <h2 className="mt-2 text-2xl font-black">Uji pemahaman dengan tes AI</h2>
+        <p className="mt-2 text-sm leading-7 text-slate-500">Latihan persiapan TOEFL dari materi Day ini: reading, grammar, dan writing dengan pembahasan Indonesia. Selesaikan dan simpan kelima aktivitas untuk membuka tes.</p>
+        <Button asChild className="mt-5"><Link href={`/tests?day=${lesson.dayNumber}`}><Sparkles className="size-4" /> Buka tes Day {lesson.dayNumber}</Link></Button>
+      </Card>
     </div>
   );
 }

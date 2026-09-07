@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChartNoAxesColumnIncreasing, LayoutDashboard, Map, Upload } from "lucide-react";
+import { BookOpen, ChartNoAxesColumnIncreasing, LayoutDashboard, Map, Upload, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -10,6 +10,7 @@ const links = [
   { href: "/roadmap", label: "Roadmap", icon: Map },
   { href: "/learn/1", label: "Belajar", icon: BookOpen },
   { href: "/progress", label: "Progres", icon: ChartNoAxesColumnIncreasing },
+  { href: "/tests", label: "Tes AI", icon: ClipboardCheck },
   { href: "/admin/import", label: "Import", icon: Upload },
 ];
 
@@ -24,7 +25,7 @@ export function Navigation() {
             key={href}
             href={href}
             className={cn(
-              "flex min-w-14 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold text-slate-500 transition-colors md:min-w-0 md:flex-row md:gap-2 md:px-3 md:text-sm",
+              "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold text-slate-500 transition-colors md:flex-none md:flex-row md:gap-2 md:px-3 md:text-sm",
               active && "bg-slate-900 text-white dark:bg-teal-300 dark:text-slate-950",
             )}
           >
@@ -36,4 +37,3 @@ export function Navigation() {
     </nav>
   );
 }
-

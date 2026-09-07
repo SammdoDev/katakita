@@ -2,7 +2,7 @@ node_modules
 .next
 .env
 .env.local
-drizzle/meta/_journal.json
+.env*.local
 npm-debug.log*
 
 

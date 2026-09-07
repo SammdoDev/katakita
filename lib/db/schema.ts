@@ -11,6 +11,25 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { Quiz, TestResult } from "../tests/contracts";
+
+export const aiTestAttempts = pgTable("ai_test_attempts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerHash: text("owner_hash").notNull(),
+  dayNumber: integer("day_number").notNull(),
+  quiz: jsonb("quiz").$type<Quiz>().notNull(),
+  answers: jsonb("answers").$type<number[]>(),
+  writing: text("writing"),
+  result: jsonb("result").$type<TestResult>(),
+  gradingAt: timestamp("grading_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+}, (table) => [index("ai_test_attempts_owner_day_idx").on(table.ownerHash, table.dayNumber)]);
+
+export const aiRequestUsage = pgTable("ai_request_usage", {
+  date: date("date").primaryKey(),
+  count: integer("count").notNull().default(0),
+});
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -157,4 +176,3 @@ export const learningActivityLogs = pgTable(
   },
   (table) => [index("learning_activity_logs_user_created_idx").on(table.userId, table.createdAt)],
 );
-
