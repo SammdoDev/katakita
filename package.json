@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test tests/*.test.ts",
+    "test": "node --import \"data:text/javascript,if(!process.geteuid)process.geteuid%3D()%3D%3E1000\" --import tsx --test tests/*.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

@@ -1,27 +1,12 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
+import { requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import {
   learningActivityLogs,
   learningPhases,
   lessons,
   userLessonProgress,
-  users,
 } from "@/lib/db/schema";
-
-const DEFAULT_USER_EMAIL = "learner@katakita.local";
-
-export async function ensureDefaultUser() {
-  const db = getDb();
-  const [user] = await db
-    .insert(users)
-    .values({ email: DEFAULT_USER_EMAIL, name: "Pembelajar KataKita" })
-    .onConflictDoUpdate({
-      target: users.email,
-      set: { updatedAt: new Date() },
-    })
-    .returning();
-  return user;
-}
 
 export type LessonView = {
   id: string;
@@ -90,9 +75,9 @@ export async function getAppData(): Promise<AppData> {
   if (!process.env.DATABASE_URL) {
     return { configured: false, error: null, lessons: [], phases: [], logs: [] };
   }
+  const user = await requireUser();
   try {
     const db = getDb();
-    const user = await ensureDefaultUser();
     const phaseRows = await db.select().from(learningPhases).orderBy(asc(learningPhases.phaseNumber));
     const rows = await db
       .select({
@@ -104,7 +89,7 @@ export async function getAppData(): Promise<AppData> {
       .innerJoin(learningPhases, eq(lessons.phaseId, learningPhases.id))
       .leftJoin(
         userLessonProgress,
-        eq(userLessonProgress.lessonId, lessons.id),
+        and(eq(userLessonProgress.lessonId, lessons.id), eq(userLessonProgress.userId, user.id)),
       )
       .orderBy(asc(lessons.dayNumber));
 
@@ -212,4 +197,3 @@ export function getStreak(lessons: LessonView[]) {
   }
   return streak;
 }
-

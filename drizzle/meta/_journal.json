@@ -15,6 +15,13 @@
       "when": 1788759496565,
       "tag": "0001_ai_practice",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788791624429,
+      "tag": "0002_optimal_leader",
+      "breakpoints": true
     }
   ]
 }

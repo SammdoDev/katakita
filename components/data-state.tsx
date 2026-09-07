@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { CircleAlert, Database, FileSpreadsheet } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export function DataState({ configured, error }: { configured: boolean; error: string | null }) {
@@ -10,18 +8,14 @@ export function DataState({ configured, error }: { configured: boolean; error: s
         {error ? <CircleAlert className="size-6" /> : configured ? <FileSpreadsheet className="size-6" /> : <Database className="size-6" />}
       </div>
       <h2 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-        {error ? "Database belum siap" : configured ? "Kurikulum belum diimpor" : "Hubungkan Neon lebih dulu"}
+        {error ? "Database belum siap" : configured ? "Materi belum dipasang" : "Hubungkan Neon lebih dulu"}
       </h2>
       <p className="mt-2 max-w-xl leading-7 text-slate-600 dark:text-slate-400">
         {error || (configured
-          ? "Koneksi berhasil, tetapi tabel lessons masih kosong. Import workbook awal agar Day 1–120 muncul."
-          : "Isi DATABASE_URL di .env.local, jalankan migrasi, lalu import workbook kurikulum yang tersedia.")}
+          ? "Pengelola aplikasi perlu menjalankan seed kurikulum bawaan satu kali agar Day 1–120 tersedia untuk semua akun."
+          : "Pengelola aplikasi perlu menghubungkan database dan memasang kurikulum bawaan.")}
       </p>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button asChild><Link href="/admin/import">Buka import Excel</Link></Button>
-        <Button variant="outline" asChild><a href="/api/template">Download template</a></Button>
-      </div>
+      <p className="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">Pengguna tidak perlu mengunggah file apa pun.</p>
     </Card>
   );
 }
-

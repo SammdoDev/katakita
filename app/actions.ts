@@ -3,13 +3,13 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import {
   learningActivityLogs,
   lessons,
   userLessonProgress,
 } from "@/lib/db/schema";
-import { ensureDefaultUser } from "@/lib/data";
 
 const progressSchema = z.object({
   dayNumber: z.number().int().min(1).max(120),
@@ -30,9 +30,9 @@ export async function saveLessonProgress(input: ProgressInput) {
   const parsed = progressSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, message: "Data progres belum valid." };
 
+  const user = await requireUser();
   try {
     const db = getDb();
-    const user = await ensureDefaultUser();
     const [lesson] = await db
       .select({ id: lessons.id })
       .from(lessons)

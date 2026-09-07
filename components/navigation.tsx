@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChartNoAxesColumnIncreasing, LayoutDashboard, Map, Upload, ClipboardCheck } from "lucide-react";
+import { BookOpen, ChartNoAxesColumnIncreasing, LayoutDashboard, Map, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -11,7 +11,6 @@ const links = [
   { href: "/learn/1", label: "Belajar", icon: BookOpen },
   { href: "/progress", label: "Progres", icon: ChartNoAxesColumnIncreasing },
   { href: "/tests", label: "Tes AI", icon: ClipboardCheck },
-  { href: "/admin/import", label: "Import", icon: Upload },
 ];
 
 export function Navigation() {

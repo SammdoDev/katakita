@@ -5,27 +5,38 @@ export class TestError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
 
+const JUSTWOKER_MESSAGES_URL = "https://api.justwoker.icu/v1/messages";
+
+function extractText(content: unknown) {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block): block is { type: "text"; text: string } =>
+      Boolean(block && typeof block === "object" && (block as { type?: unknown }).type === "text" && typeof (block as { text?: unknown }).text === "string"))
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+}
+
 export function aiConfigured() {
-  return Boolean(process.env.AI_API_KEY && process.env.AI_BASE_URL && process.env.AI_MODEL);
+  return Boolean(process.env.JUSTWOKER_API_KEY && process.env.JUSTWOKER_MODEL);
 }
 
 async function requestJson<T>(system: string, input: unknown, schema: z.ZodType<T>): Promise<T> {
   if (!aiConfigured()) throw new TestError("Tes AI belum diaktifkan. Pemilik aplikasi perlu mengatur koneksi AI.", 503);
-  let endpoint: URL;
   try {
-    endpoint = new URL(`${process.env.AI_BASE_URL!.replace(/\/+$/, "")}/chat/completions`);
-    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error();
-  } catch { throw new TestError("Konfigurasi alamat layanan AI belum valid.", 503); }
-  try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(JUSTWOKER_MESSAGES_URL, {
       method: "POST", cache: "no-store", redirect: "error",
       signal: AbortSignal.timeout(45000),
-      headers: { Authorization: `Bearer ${process.env.AI_API_KEY}`, "Content-Type": "application/json" },
+      headers: {
+        "x-api-key": process.env.JUSTWOKER_API_KEY!,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        model: process.env.AI_MODEL,
+        model: process.env.JUSTWOKER_MODEL,
         max_tokens: 6000,
-        response_format: { type: "json_object" },
-        messages: [{ role: "system", content: system }, { role: "user", content: JSON.stringify(input) }],
+        system,
+        messages: [{ role: "user", content: JSON.stringify(input) }],
       }),
     });
     if (!response.ok) {
@@ -34,8 +45,8 @@ async function requestJson<T>(system: string, input: unknown, schema: z.ZodType<
         : "Layanan AI belum dapat memproses tes. Periksa key, model, dan konfigurasi provider.", 503);
     }
     const payload = await response.json();
-    const content = payload?.choices?.[0]?.message?.content;
-    if (typeof content !== "string" || payload.choices[0].finish_reason === "length") throw new Error();
+    const content = extractText(payload?.content);
+    if (!content || payload?.stop_reason === "max_tokens") throw new Error();
     return schema.parse(JSON.parse(content.replace(/^```(?:json)?\s*|\s*```$/g, "")));
   } catch (error) {
     if (error instanceof TestError) throw error;

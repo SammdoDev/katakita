@@ -112,7 +112,7 @@ export function TestCenter({ lessons, initialDay, configured, databaseReady }: {
         </div>
       </Card>
 
-      {!databaseReady ? <Notice title="Materi belum tersedia" text="Hubungkan database dan import kurikulum agar tes bisa mengikuti materi belajarmu." />
+      {!databaseReady ? <Notice title="Materi belum tersedia" text="Pengelola aplikasi perlu memasang kurikulum bawaan agar tes dapat mengikuti materi belajarmu." />
         : !configured ? <Notice title="Tes AI segera hadir" text="Koneksi AI belum diaktifkan oleh pemilik aplikasi. Kamu tetap bisa melanjutkan pembelajaran harian." />
         : !lesson?.completed ? <Notice title="Selesaikan Day ini terlebih dahulu" text="Centang dan simpan kelima aktivitas pembelajaran. Setelah itu, tes Day ini akan terbuka." /> : null}
 

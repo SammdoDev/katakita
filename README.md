@@ -1,6 +1,6 @@
 # KataKita
 
-KataKita adalah personal learning tracker untuk mengikuti kurikulum bahasa Inggris Day 1–120. Seluruh kurikulum awal dibaca dari `Rencana_Belajar_Inggris_120_Hari.xlsx`; setelah import, Neon PostgreSQL menjadi sumber data utama aplikasi.
+KataKita adalah learning tracker multi-user untuk mengikuti kurikulum bahasa Inggris Day 1–120. Seluruh akun memakai materi bersama dari `Rencana_Belajar_Inggris_120_Hari.xlsx`, sedangkan progres, catatan, dan hasil tes tersimpan terpisah untuk setiap akun.
 
 ## Stack
 
@@ -25,7 +25,7 @@ KataKita adalah personal learning tracker untuk mengikuti kurikulum bahasa Inggr
    DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
    ```
 
-Project ini memakai satu user lokal bawaan (`learner@katakita.local`) karena autentikasi multi-user tidak termasuk scope awal. Schema `users` sudah siap dikembangkan jika autentikasi ditambahkan kemudian.
+Pengguna membuat akun melalui `/login?mode=register`. Kata sandi di-hash dengan scrypt dan sesi login disimpan di PostgreSQL; browser hanya menerima token acak dalam cookie HTTP-only.
 
 ## 2. Install dan jalankan migration
 
@@ -43,7 +43,7 @@ npm run db:migrate
 
 Untuk development cepat, `npm run db:push` juga tersedia, tetapi migration direkomendasikan agar perubahan schema tercatat.
 
-## 3. Seed/import Excel awal
+## 3. Pasang materi bersama
 
 Pastikan file berikut tetap berada di root project:
 
@@ -57,7 +57,7 @@ Lalu jalankan:
 npm run db:seed
 ```
 
-Seed membaca dan memvalidasi workbook asli, lalu melakukan upsert berdasarkan `day_number`. Proses ini menyimpan:
+Perintah ini hanya dijalankan sekali oleh pengelola aplikasi. Pengguna tidak mengunggah workbook masing-masing. Seed membaca dan memvalidasi workbook bawaan, lalu melakukan upsert berdasarkan `day_number`. Proses ini menyimpan:
 
 - 120 lesson beserta seluruh materi, contoh, tugas, durasi, kriteria selesai, dan URL;
 - vocabulary yang dinormalisasi per lesson;
@@ -66,9 +66,7 @@ Seed membaca dan memvalidasi workbook asli, lalu melakukan upsert berdasarkan `d
 - metadata sumber belajar;
 - checkpoint evaluasi.
 
-Sebagai alternatif, jalankan aplikasi lalu buka `/admin/import`. Pilih file `.xlsx`, lakukan preview/validasi, kemudian klik **Import ke Neon**. Mengunggah revisi workbook tidak menggandakan Day karena import menggunakan upsert `day_number`.
-
-Tombol **Download template awal** pada halaman import mengunduh workbook awal dengan struktur tujuh sheet yang wajib dipertahankan.
+Jika workbook diperbarui oleh pengelola, jalankan `npm run db:seed` lagi. Upsert `day_number` memperbarui materi bersama tanpa menggandakan Day dan tanpa menghapus progres pengguna.
 
 ## 4. Menjalankan aplikasi
 
@@ -79,6 +77,8 @@ npm run dev
 ```
 
 Buka [http://localhost:3000](http://localhost:3000).
+
+Buat akun pertama di [http://localhost:3000/login?mode=register](http://localhost:3000/login?mode=register), lalu masuk. Semua akun langsung mendapat materi Day 1–120 yang sama dengan progres awal masing-masing.
 
 Production build:
 
@@ -96,10 +96,10 @@ npm run lint
 ## Route utama
 
 - `/` — dashboard Day saat ini, statistik, streak, dan progres fase
+- `/login` — masuk atau membuat akun
 - `/learn/[day]` — materi lengkap dan pencatatan lima aktivitas
 - `/roadmap` — seluruh Day dengan filter fase/status
 - `/progress` — ringkasan, Day yang perlu diulang, dan riwayat aktivitas
-- `/admin/import` — preview, validasi, dan upsert workbook
 
 ## Tes AI setelah pembelajaran
 
@@ -107,22 +107,20 @@ Buka `/tests` atau gunakan tombol di akhir `/learn/[day]`. Tes terbuka setelah k
 
 Satu tes terdiri dari teks bacaan orisinal, 3 soal reading, 3 soal grammar, dan satu writing singkat. Kunci dan penjelasan tidak dikirim ke browser sebelum jawaban dikumpulkan. Pilihan ganda dinilai di server (reading 30 + grammar 30); writing dinilai AI dengan rubrik isi, grammar, kosakata, dan susunan (masing-masing 0–5, dikalikan 2, maksimal 40). Total 0–100 adalah skor latihan internal, bukan skor TOEFL resmi. Ini latihan persiapan singkat, belum simulasi lengkap listening/speaking.
 
-Set environment berikut di Vercel dan `.env.local`, lalu redeploy:
+Set dua environment JustWoker berikut di Vercel dan `.env.local`, lalu redeploy:
 
 ```env
-AI_API_KEY=key-dari-provider
-AI_BASE_URL=https://alamat-api-provider/v1
-AI_MODEL=model-yang-mendukung-json
-AI_DAILY_LIMIT=10
+JUSTWOKER_API_KEY=key-dari-justwoker
+JUSTWOKER_MODEL=model-yang-mendukung-json
 ```
 
-Adapter menggunakan protokol `POST /chat/completions`, bearer token, `response_format: json_object`, dan `max_tokens`. Gunakan base URL dan model yang didukung provider pilihanmu; tidak ada key, URL provider, atau model yang dikunci ke satu vendor. Untuk Gemini lewat endpoint kompatibel, lihat [dokumentasi resmi Google](https://ai.google.dev/gemini-api/docs/openai). Jangan memberi awalan `NEXT_PUBLIC_` pada secret.
+Adapter mengirim permintaan Anthropic-compatible ke endpoint JustWoker `https://api.justwoker.icu/v1/messages` menggunakan header `x-api-key`, versi protokol `2023-06-01`, dan `max_tokens`. Respons dibaca dari blok `content` bertipe `text`, sehingga model extended-thinking tetap didukung. Jangan memberi awalan `NEXT_PUBLIC_` pada secret.
 
-Untuk database baru atau yang sudah memakai migration Drizzle, jalankan `npm run db:migrate` untuk membuat `ai_test_attempts` dan `ai_request_usage`. Jika database sebelumnya dibuat dengan `db:push` dan tidak memiliki riwayat migration, gunakan `npx drizzle-kit push --strict --verbose` dan tinjau SQL sebelum menyetujui; jangan menjalankan migration awal ke tabel yang sudah ada. Database project yang tersambung saat implementasi ini sudah mendapatkan dua tabel AI melalui jalur push tersebut. Migration dan seed sekarang memuat `.env.local` lewat `@next/env`. File `drizzle/meta/_journal.json` harus ikut di Git agar migration tersedia pada checkout baru.
+Untuk database baru atau yang sudah memakai migration Drizzle, jalankan `npm run db:migrate` untuk membuat seluruh tabel, termasuk sesi login dan tes AI. Jika database sebelumnya dibuat dengan `db:push` dan tidak memiliki riwayat migration, gunakan `npx drizzle-kit push --strict --verbose` dan tinjau SQL sebelum menyetujui; jangan menjalankan migration awal ke tabel yang sudah ada. Database project yang tersambung saat implementasi ini sudah memiliki schema login, session, kepemilikan tes per user, dan 120 materi bersama. Migration dan seed memuat `.env.local` lewat `@next/env`. File `drizzle/meta/_journal.json` harus ikut di Git agar migration tersedia pada checkout baru.
 
-Riwayat dan hasil disimpan di Neon; akses tiap tes mengikuti token acak dalam cookie HTTP-only browser (bukan login lintas perangkat). Draf jawaban disimpan di `sessionStorage` sampai submit. Menghapus cookie akan menghilangkan akses ke riwayat browser tersebut. Materi harian tetap memakai profil personal bawaan yang sama seperti versi awal.
+Riwayat dan hasil disimpan di Neon berdasarkan akun yang sedang login, sehingga tetap tersedia setelah login dari perangkat lain. Draf jawaban yang belum dikirim disimpan sementara di `sessionStorage` pada browser tersebut.
 
-`AI_DAILY_LIMIT` membatasi jumlah panggilan provider untuk seluruh aplikasi per hari UTC dengan counter atomik PostgreSQL, termasuk panggilan gagal. Default 10 panggilan (umumnya dua per tes: pembuatan soal dan penilaian writing). Permintaan penilaian ganda dikunci di database; hasil tersimpan dikembalikan tanpa panggilan AI baru. Batas ini membatasi penggunaan pada aplikasi personal publik, bukan pengganti autentikasi pemilik. Tanpa konfigurasi AI, halaman belajar tetap berjalan dan halaman tes menampilkan status belum aktif.
+Aplikasi membatasi panggilan JustWoker hingga 10 kali untuk seluruh aplikasi per hari UTC dengan counter atomik PostgreSQL, termasuk panggilan gagal. Satu tes umumnya memakai dua panggilan: pembuatan soal dan penilaian writing. Permintaan penilaian ganda dikunci di database; hasil tersimpan dikembalikan tanpa panggilan AI baru. Tanpa konfigurasi AI, halaman belajar tetap berjalan dan halaman tes menampilkan status belum aktif.
 
 Verifikasi dengan `npm test`, `npm run lint`, dan `npm run build`. Tes unit memakai respons provider tiruan untuk memeriksa perhitungan nilai, pemisahan kunci, validasi respons AI, serta redaksi error. Tes AI nyata memerlukan key provider yang valid.
 

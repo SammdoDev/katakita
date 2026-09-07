@@ -13,9 +13,28 @@ import {
 } from "drizzle-orm/pg-core";
 import type { Quiz, TestResult } from "../tests/contracts";
 
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull().default("Pembelajar KataKita"),
+  passwordHash: text("password_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const sessions = pgTable("sessions", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index("sessions_user_id_idx").on(table.userId)]);
+
 export const aiTestAttempts = pgTable("ai_test_attempts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  ownerHash: text("owner_hash").notNull(),
+  ownerHash: text("owner_hash"),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
   dayNumber: integer("day_number").notNull(),
   quiz: jsonb("quiz").$type<Quiz>().notNull(),
   answers: jsonb("answers").$type<number[]>(),
@@ -24,19 +43,14 @@ export const aiTestAttempts = pgTable("ai_test_attempts", {
   gradingAt: timestamp("grading_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   submittedAt: timestamp("submitted_at", { withTimezone: true }),
-}, (table) => [index("ai_test_attempts_owner_day_idx").on(table.ownerHash, table.dayNumber)]);
+}, (table) => [
+  index("ai_test_attempts_owner_day_idx").on(table.ownerHash, table.dayNumber),
+  index("ai_test_attempts_user_day_idx").on(table.userId, table.dayNumber),
+]);
 
 export const aiRequestUsage = pgTable("ai_request_usage", {
   date: date("date").primaryKey(),
   count: integer("count").notNull().default(0),
-});
-
-export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull().default("Pembelajar KataKita"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const learningPhases = pgTable("learning_phases", {

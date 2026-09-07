@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { LogIn, LogOut, Sparkles, UserRound } from "lucide-react";
+import { logoutAction } from "@/app/login/actions";
 import { Navigation } from "@/components/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
   return (
     <div className="min-h-screen overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,rgba(45,212,191,.12),transparent_28%),radial-gradient(circle_at_90%_25%,rgba(110,231,183,.08),transparent_25%)]" />
@@ -16,14 +20,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="text-lg font-black tracking-[-.04em]">KataKita<span className="text-teal-500">.</span></span>
           </Link>
           <div className="flex items-center gap-1">
-            <div className="hidden md:block"><Navigation /></div>
+            {user && <div className="hidden md:block"><Navigation /></div>}
             <ThemeToggle />
+            {user ? (
+              <div className="ml-1 flex items-center gap-2">
+                <div className="hidden max-w-36 items-center gap-2 lg:flex">
+                  <UserRound className="size-4 shrink-0 text-teal-600 dark:text-teal-300" />
+                  <span className="truncate text-sm font-bold text-slate-700 dark:text-slate-200">{user.name}</span>
+                </div>
+                <form action={logoutAction}>
+                  <Button type="submit" size="icon" variant="ghost" title="Keluar"><LogOut className="size-4" /><span className="sr-only">Keluar</span></Button>
+                </form>
+              </div>
+            ) : (
+              <Button asChild variant="ghost" className="ml-1"><Link href="/login"><LogIn className="size-4" /> Masuk</Link></Button>
+            )}
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 pb-28 pt-7 sm:px-6 md:pb-14 md:pt-10">{children}</main>
-      <div className="md:hidden"><Navigation /></div>
+      {user && <div className="md:hidden"><Navigation /></div>}
     </div>
   );
 }
-
